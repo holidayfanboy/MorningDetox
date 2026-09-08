@@ -3,6 +3,33 @@
 Running notes on what's been built, session by session, so context isn't
 lost between sessions. Newest first.
 
+## 2026-09-08 -- Settings screen
+
+Built out the previously-empty `lib/screens/settings_screen.dart`.
+
+- New `lib/services/settings_service.dart` -- persists two prefs and exposes
+  them as `ValueNotifier`s (the one service here that keeps live state, so
+  the theme can flip instantly): `alarm_volume` (double 0..1, default 0.8)
+  and `dark_mode` (bool). `main.dart` calls `SettingsService.load()` before
+  `runApp`.
+- `lib/theme/app_theme.dart` -- refactored the single `light` getter into a
+  shared `_from(ColorScheme)` builder and added `AppTheme.dark`: black
+  surface, `0xFFB0B0B0` grey ink/primary. `lib/app.dart` now wraps
+  `MaterialApp` in a `ValueListenableBuilder` on `SettingsService.darkMode`
+  and sets `theme`/`darkTheme`/`themeMode`.
+- `lib/services/alarm_service.dart` -- `arm()` is now `async` and reads
+  `SettingsService.readVolume()` into `VolumeSettings.fade(volume: ...)`, so
+  the slider actually changes how loud alarms ring.
+- Settings screen sections: alarm-volume `Slider` + a speaker `IconButton`
+  that previews `AlarmSoundService.defaultPath` at the chosen level via a
+  dedicated `audioplayers` `AudioPlayer` (own player, separate from
+  `package:alarm`); dark-mode `ToggleDot`; an Android-only row linking to
+  `AllowedAppsScreen`. Explicit back arrow in the AppBar leading slot.
+- New dep: `audioplayers: ^6.1.0`.
+- **TODO (user): the volume preview needs the real `assets/sounds/*.mp3`
+  files** (same TODO as the sound picker) -- until they exist the speaker
+  button shows a "couldn't play" snackbar.
+
 ## 2026-09-05 -- Alarm sound picker, Allowed Apps, list/edit screen polish
 
 ### Alarm sound picker

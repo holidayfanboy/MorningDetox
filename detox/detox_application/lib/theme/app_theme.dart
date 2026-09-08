@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 /// Central place for the app's look. Screens and widgets should always read
 /// colors through `Theme.of(context).colorScheme` rather than `Colors.*`
-/// literals, so a future theme-selection feature only needs to add more
-/// [ThemeData] variants here instead of touching every screen.
+/// literals, so theme selection only needs to add more [ThemeData] variants
+/// here instead of touching every screen.
 class AppTheme {
   const AppTheme._();
 
@@ -16,8 +16,8 @@ class AppTheme {
   static const clockLetterSpacing = 7.50;
 
   /// Default launch theme: plain paper white background, black ink.
-  static ThemeData get light {
-    const colorScheme = ColorScheme.light(
+  static ThemeData get light => _from(
+    const ColorScheme.light(
       surface: Colors.white,
       onSurface: Colors.black,
       primary: Colors.black,
@@ -26,8 +26,26 @@ class AppTheme {
       onSecondary: Colors.white,
       error: Color(0xFFB3261E),
       onError: Colors.white,
-    );
+    ),
+  );
 
+  /// The "reversed" theme from Settings: black background with everything
+  /// drawn in grey rather than pure white, so the sketchy strokes and big
+  /// clock don't glare on an OLED panel.
+  static ThemeData get dark => _from(
+    const ColorScheme.dark(
+      surface: Colors.black,
+      onSurface: Color(0xFFB0B0B0),
+      primary: Color(0xFFB0B0B0),
+      onPrimary: Colors.black,
+      secondary: Color(0xFFB0B0B0),
+      onSecondary: Colors.black,
+      error: Color(0xFFF2B8B5),
+      onError: Colors.black,
+    ),
+  );
+
+  static ThemeData _from(ColorScheme colorScheme) {
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,

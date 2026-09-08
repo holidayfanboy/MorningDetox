@@ -11,6 +11,7 @@ import 'screens/ring_screen.dart';
 import 'services/detox_session_service.dart';
 import 'services/first_launch_service.dart';
 import 'services/permission_service.dart';
+import 'services/settings_service.dart';
 import 'theme/app_theme.dart';
 
 /// Root navigator, used by [AppRoot] to push screens (the ringing alarm,
@@ -23,12 +24,19 @@ class DetoxApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: rootNavigatorKey,
-      title: 'Morning Detox',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
-      home: const AppRoot(),
+    return ValueListenableBuilder<bool>(
+      valueListenable: SettingsService.darkMode,
+      builder: (context, dark, _) {
+        return MaterialApp(
+          navigatorKey: rootNavigatorKey,
+          title: 'Morning Detox',
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.light,
+          darkTheme: AppTheme.dark,
+          themeMode: dark ? ThemeMode.dark : ThemeMode.light,
+          home: const AppRoot(),
+        );
+      },
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:alarm/alarm.dart';
 
 import '../models/detox_alarm.dart';
 import 'alarm_sound_service.dart';
+import 'settings_service.dart';
 
 /// Thin wrapper around package:alarm -- purely the "arm/disarm with the OS"
 /// half of alarm handling. [AlarmRepository] is what screens actually talk
@@ -11,11 +12,12 @@ import 'alarm_sound_service.dart';
 class AlarmService {
   const AlarmService();
 
-  Future<bool> arm(DetoxAlarm alarm) {
+  Future<bool> arm(DetoxAlarm alarm) async {
     final payload = DetoxPayload(
       detoxMinutes: alarm.detoxMinutes,
       label: alarm.label,
     );
+    final volume = await SettingsService.readVolume();
     return Alarm.set(
       alarmSettings: AlarmSettings(
         id: alarm.id,
@@ -27,6 +29,7 @@ class AlarmService {
         allowAlarmOverlap: true,
         volumeSettings: VolumeSettings.fade(
           fadeDuration: const Duration(seconds: 5),
+          volume: volume,
         ),
         notificationSettings: NotificationSettings(
           title: 'Morning Detox',

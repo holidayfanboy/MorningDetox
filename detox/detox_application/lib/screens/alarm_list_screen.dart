@@ -14,7 +14,9 @@ import '../utils/repeat_days.dart';
 import '../widgets/toggle_dot.dart';
 import 'accessibility_permission_screen.dart';
 import 'allowed_apps_screen.dart';
+import 'detox_now_screen.dart';
 import 'edit_alarm_screen.dart';
+import 'settings_screen.dart';
 
 class AlarmListScreen extends StatefulWidget {
   const AlarmListScreen({super.key});
@@ -115,10 +117,43 @@ class _AlarmListScreenState extends State<AlarmListScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 12, 0),
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
+                  PopupMenuButton<VoidCallback>(
+                    icon: const Icon(Icons.more_horiz, size: 28),
+                    tooltip: 'Menu',
+                    onSelected: (action) => action(),
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const SettingsScreen(),
+                          ),
+                        ),
+                        child: Text(
+                          'Settings',
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const DetoxNowScreen(),
+                          ),
+                        ),
+                        child: Text(
+                          'Detox Now',
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
                   if (defaultTargetPlatform == TargetPlatform.android)
                     IconButton(
                       icon: const Icon(Icons.apps_rounded, size: 28),
