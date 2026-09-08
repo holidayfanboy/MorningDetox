@@ -1,0 +1,34 @@
+name: detox_application
+description: "A Mobile App For Alarm and Handphone"
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.13.1
+
+dependencies:
+  alarm: ^5.12.0
+  shared_preferences: ^2.3.2
+  permission_handler: ^11.3.1
+  flutter:
+    sdk: flutter
+  path_provider: ^2.1.6
+  file_picker: ^12.2.0
+  path: ^1.9.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/sounds/
+
+  fonts:
+    - family: PeachesForBreakfast
+      fonts:
+        - asset: assets/fonts/PeachesForBreakfast-Regular.otf
+          weight: 700
