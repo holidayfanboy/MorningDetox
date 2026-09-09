@@ -1,4 +1,4 @@
-package com.example.detox_application
+package com.morningdetox.app
 
 import android.content.ComponentName
 import android.content.Intent

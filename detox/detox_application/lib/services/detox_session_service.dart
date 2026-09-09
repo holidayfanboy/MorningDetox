@@ -21,12 +21,29 @@ class DetoxSessionService {
   static const keyEndAtMillis = 'detox_end_at_millis';
   static const keyAlarmId = 'detox_alarm_id';
 
+  /// When the current session began. Dart-only (the native accessibility
+  /// service never reads it); used to report how long a session actually
+  /// ran when it ends -- see [startedAt].
+  static const keyStartedAtMillis = 'detox_started_at_millis';
+
   Future<void> start({required int alarmId, required int minutes}) async {
     final prefs = await SharedPreferences.getInstance();
-    final endAt = DateTime.now().add(Duration(minutes: minutes));
+    final now = DateTime.now();
+    final endAt = now.add(Duration(minutes: minutes));
     await prefs.setBool(keyActive, true);
     await prefs.setInt(keyEndAtMillis, endAt.millisecondsSinceEpoch);
     await prefs.setInt(keyAlarmId, alarmId);
+    await prefs.setInt(keyStartedAtMillis, now.millisecondsSinceEpoch);
+  }
+
+  /// Start time of the current session, or null if it was never recorded
+  /// (e.g. a session started before this key existed).
+  Future<DateTime?> startedAt() async {
+    final prefs = await SharedPreferences.getInstance();
+    final millis = prefs.getInt(keyStartedAtMillis);
+    return millis == null
+        ? null
+        : DateTime.fromMillisecondsSinceEpoch(millis);
   }
 
   Future<void> end() async {

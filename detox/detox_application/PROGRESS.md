@@ -3,6 +3,67 @@
 Running notes on what's been built, session by session, so context isn't
 lost between sessions. Newest first.
 
+## 2026-09-09 -- Usage analytics (Firebase Analytics)
+
+Added Firebase Analytics so app-open frequency, retention/churn, and
+feature usage can be read in the Firebase console (there is no in-app
+dashboard -- a device only knows its own usage).
+
+- App id de-templated: `com.example.detox_application` ->
+  **`com.morningdetox.app`** everywhere (Android `applicationId` +
+  `namespace` + Kotlin package dir + `package` lines; iOS bundle id in
+  `project.pbxproj`). `AndroidManifest.xml` needed no change (relative
+  `.MainActivity` / `.DetoxAccessibilityService`, `ComponentName` built
+  from `this` at runtime).
+- New `lib/services/analytics_service.dart` -- `const`-class best-effort
+  wrapper (swallows all errors), the only file that imports
+  `firebase_analytics`. `static init()` from `main()` applies the consent
+  choice and watches `SettingsService.analyticsEnabled`.
+- `SettingsService` gained a third `ValueNotifier`, `analyticsEnabled`
+  (key `analytics_enabled`, default **on**), + a "Share anonymous usage
+  data" `ToggleDot` row in Settings.
+- `DetoxSessionService.start()` now also persists `detox_started_at_millis`
+  (Dart-only; native ignores unknown keys) so `detox_ended` can report
+  planned vs actual minutes. `DetoxLockScreen` converted
+  `StatelessWidget` -> `StatefulWidget` for the `screen_view` +
+  reason-tagged `_finish({required String reason})` ('completed' /
+  'emergency_unlock').
+- Events: `app_opened` / `app_foregrounded` (`app.dart` lifecycle),
+  `detox_started` / `detox_ended`, `alarm_rang` / `alarm_stopped` /
+  `alarm_created` / `alarm_edited` / `alarm_deleted` / `alarm_toggled`,
+  `setting_changed` (dark mode, volume, allowed-apps *count* only -- never
+  package names), and a manual `screen_view` per screen (routes are
+  anonymous so the auto observer can't). Firebase also auto-collects
+  `first_open` / `session_start` / `user_engagement` -> Retention report.
+- `pubspec.yaml`: `firebase_core ^3.8.0`, `firebase_analytics ^11.4.0`
+  (resolved 3.15.2 / 11.6.0). `com.google.gms.google-services` 4.4.2 added
+  to `settings.gradle.kts` + `app/build.gradle.kts` plugin blocks.
+
+Setup done: `flutterfire configure --platforms=android` run
+(`lib/firebase_options.dart` + `android/app/google-services.json`
+generated), `com.google.gms.google-services` bumped to **4.4.3** for AGP
+9.1.0. `flutter analyze lib/` clean; `flutter build apk --debug` exit 0
+(only the harmless KGP / Gradle-9 native-access / obsolete-Java-8
+warnings). Still left: runtime check of events in Firebase console
+DebugView.
+
+### Privacy policy (2026-09-09)
+
+- New `PRIVACY.md` (canonical) + `docs/privacy-policy.html` (self-contained,
+  hostable via GitHub Pages from `/docs`). Content is accurate to what
+  Firebase actually collects here; two placeholders to fill (last-updated
+  date, contact email).
+- `lib/screens/settings_screen.dart` -- new "Privacy" section: an `InkWell`
+  row ("How your usage data is handled" + `open_in_new`) that
+  `launchUrl`s `_privacyPolicyUrl` (a placeholder GitHub Pages URL --
+  **replace before release**), with a SnackBar on failure. Dep:
+  `url_launcher ^6.3.1`. `AndroidManifest.xml` `<queries>` gained a
+  `VIEW`/`https` intent for Android 11+ visibility.
+- Developer still to do: fill placeholders, host the HTML, put the real URL
+  in `_privacyPolicyUrl` + Play Console (Privacy policy field + Data Safety
+  form -- App activity / App info & performance / Device IDs; collected
+  yes, shared no).
+
 ## 2026-09-09 -- Detox Now screen (immediate phone lock)
 
 Built out the placeholder `lib/screens/detox_now_screen.dart` into a real

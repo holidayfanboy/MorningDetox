@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../services/accessibility_bridge.dart';
+import '../services/analytics_service.dart';
 import '../widgets/sketchy_box.dart';
 
 /// Android-only explainer for turning on the accessibility service that
@@ -11,9 +14,11 @@ class AccessibilityPermissionScreen extends StatelessWidget {
   const AccessibilityPermissionScreen({super.key});
 
   static const _bridge = AccessibilityBridge();
+  static const _analytics = AnalyticsService();
 
   @override
   Widget build(BuildContext context) {
+    unawaited(_analytics.screenView('accessibility_permission'));
     return Scaffold(
       appBar: AppBar(title: const Text('Real Blocking')),
       body: SafeArea(

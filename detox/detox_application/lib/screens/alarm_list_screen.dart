@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import '../models/detox_alarm.dart';
 import '../services/accessibility_bridge.dart';
 import '../services/alarm_repository.dart';
+import '../services/analytics_service.dart';
 import '../theme/app_theme.dart';
 import '../utils/duration_format.dart';
 import '../utils/repeat_days.dart';
@@ -28,6 +29,7 @@ class AlarmListScreen extends StatefulWidget {
 class _AlarmListScreenState extends State<AlarmListScreen> {
   static const _repository = AlarmRepository();
   static const _accessibilityBridge = AccessibilityBridge();
+  static const _analytics = AnalyticsService();
 
   List<DetoxAlarm> _alarms = [];
   bool _showAccessibilityBanner = false;
@@ -41,6 +43,7 @@ class _AlarmListScreenState extends State<AlarmListScreen> {
   @override
   void initState() {
     super.initState();
+    unawaited(_analytics.screenView('alarm_list'));
     unawaited(_load());
     _scheduledSubscription = Alarm.scheduled.listen((_) => unawaited(_load()));
     unawaited(_refreshAccessibilityBanner());
@@ -84,6 +87,7 @@ class _AlarmListScreenState extends State<AlarmListScreen> {
       final index = _alarms.indexWhere((a) => a.id == alarm.id);
       if (index >= 0) _alarms[index] = alarm.copyWith(enabled: value);
     });
+    unawaited(_analytics.alarmToggled(value));
     await _repository.setEnabled(alarm, value);
     unawaited(_load());
   }

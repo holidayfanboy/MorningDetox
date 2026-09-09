@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../services/alarm_sound_service.dart';
+import '../services/analytics_service.dart';
 import '../services/settings_service.dart';
 import '../widgets/toggle_dot.dart';
 import 'allowed_apps_screen.dart';
@@ -22,6 +24,14 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  static const _analytics = AnalyticsService();
+
+  /// Where the hosted privacy policy lives. TODO: replace with the real URL
+  /// once `docs/privacy-policy.html` is published (e.g. GitHub Pages from
+  /// the `/docs` folder) -- and mirror it into Play Console.
+  static const _privacyPolicyUrl =
+      'https://holidayfanboy.github.io/morning-detox/privacy-policy.html';
+
   /// Plays the ringtone preview for the volume test. Its own player, kept
   /// well away from `package:alarm`'s playback.
   final AudioPlayer _preview = AudioPlayer();
@@ -31,6 +41,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
+    unawaited(_analytics.screenView('settings'));
     _previewDone = _preview.onPlayerComplete.listen((_) {
       if (mounted) setState(() => _previewing = false);
     });
@@ -41,6 +52,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _previewDone?.cancel();
     _preview.dispose();
     super.dispose();
+  }
+
+  Future<void> _openPrivacyPolicy() async {
+    try {
+      final ok = await launchUrl(
+        Uri.parse(_privacyPolicyUrl),
+        mode: LaunchMode.externalApplication,
+      );
+      if (!ok && mounted) _privacyLinkFailed();
+    } catch (_) {
+      if (mounted) _privacyLinkFailed();
+    }
+  }
+
+  void _privacyLinkFailed() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Couldn't open the privacy policy.")),
+    );
   }
 
   Future<void> _togglePreview() async {
@@ -97,8 +126,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           value: volume,
                           onChanged: (value) => SettingsService.volume.value =
                               double.parse(value.toStringAsFixed(2)),
-                          onChangeEnd: (value) =>
-                              unawaited(SettingsService.setVolume(value)),
+                          onChangeEnd: (value) {
+                            unawaited(SettingsService.setVolume(value));
+                            unawaited(
+                              _analytics.settingChanged(
+                                setting: 'alarm_volume',
+                                value: value.toStringAsFixed(2),
+                              ),
+                            );
+                          },
                         );
                       },
                     ),
@@ -124,8 +160,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   builder: (context, dark, _) => ToggleDot(
                     value: dark,
                     seed: 42,
+                    onChanged: (value) {
+                      unawaited(SettingsService.setDarkMode(value));
+                      unawaited(
+                        _analytics.settingChanged(
+                          setting: 'dark_mode',
+                          value: '$value',
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+            _SettingsSection(
+              title: 'Share anonymous usage data',
+              dividerColor: dividerColor,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: ValueListenableBuilder<bool>(
+                  valueListenable: SettingsService.analyticsEnabled,
+                  builder: (context, enabled, _) => ToggleDot(
+                    value: enabled,
+                    seed: 84,
                     onChanged: (value) =>
-                        unawaited(SettingsService.setDarkMode(value)),
+                        unawaited(SettingsService.setAnalyticsEnabled(value)),
+                  ),
+                ),
+              ),
+            ),
+            _SettingsSection(
+              title: 'Privacy',
+              dividerColor: dividerColor,
+              child: InkWell(
+                onTap: () => unawaited(_openPrivacyPolicy()),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'How your usage data is handled',
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      Icon(Icons.open_in_new, color: scheme.onSurface),
+                    ],
                   ),
                 ),
               ),

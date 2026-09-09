@@ -8,6 +8,7 @@ import 'screens/alarm_list_screen.dart';
 import 'screens/detox_lock_screen.dart';
 import 'screens/intro_screen.dart';
 import 'screens/ring_screen.dart';
+import 'services/analytics_service.dart';
 import 'services/detox_session_service.dart';
 import 'services/first_launch_service.dart';
 import 'services/permission_service.dart';
@@ -59,9 +60,14 @@ class _AppRootState extends State<AppRoot> with WidgetsBindingObserver {
   static const _firstLaunchService = FirstLaunchService();
   static const _sessionService = DetoxSessionService();
   static const _permissionService = PermissionService();
+  static const _analytics = AnalyticsService();
 
   Widget? _home;
   StreamSubscription<AlarmSet>? _ringingSubscription;
+
+  /// Previous lifecycle state, so a foreground return can be told apart from
+  /// the first `resumed` right after launch (which `app_opened` covers).
+  AppLifecycleState? _lastLifecycleState;
 
   @override
   void initState() {
@@ -87,11 +93,13 @@ class _AppRootState extends State<AppRoot> with WidgetsBindingObserver {
     final endAt = await _sessionService.activeEndAt();
     if (endAt != null) {
       if (!mounted) return;
+      unawaited(_analytics.appOpened('lock'));
       setState(() => _home = DetoxLockScreen(endAt: endAt));
       return;
     }
     final seenIntro = await _firstLaunchService.hasSeenIntro();
     if (!mounted) return;
+    unawaited(_analytics.appOpened(seenIntro ? 'alarm_list' : 'intro'));
     setState(() {
       _home = seenIntro
           ? const AlarmListScreen()
@@ -107,6 +115,7 @@ class _AppRootState extends State<AppRoot> with WidgetsBindingObserver {
 
   void _onRingingChanged(AlarmSet alarmSet) {
     if (alarmSet.alarms.isEmpty) return;
+    unawaited(_analytics.alarmRang());
     rootNavigatorKey.currentState?.push(
       MaterialPageRoute(
         builder: (_) => RingScreen(alarmSettings: alarmSet.alarms.first),
@@ -116,7 +125,12 @@ class _AppRootState extends State<AppRoot> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    final wasBackgrounded =
+        _lastLifecycleState == AppLifecycleState.paused ||
+        _lastLifecycleState == AppLifecycleState.hidden;
+    _lastLifecycleState = state;
     if (state != AppLifecycleState.resumed) return;
+    if (wasBackgrounded) unawaited(_analytics.appForegrounded());
     unawaited(_checkSessionOnResume());
   }
 

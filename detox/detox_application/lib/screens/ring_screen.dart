@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:alarm/alarm.dart';
 import 'package:flutter/material.dart';
 
 import '../models/detox_alarm.dart';
 import '../services/alarm_repository.dart';
+import '../services/analytics_service.dart';
 import '../services/detox_session_service.dart';
 import '../widgets/sketchy_box.dart';
 import 'detox_lock_screen.dart';
@@ -23,12 +26,26 @@ class RingScreen extends StatefulWidget {
 class _RingScreenState extends State<RingScreen> {
   static const _repository = AlarmRepository();
   static const _sessionService = DetoxSessionService();
+  static const _analytics = AnalyticsService();
   bool _stopping = false;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_analytics.screenView('ring'));
+  }
 
   Future<void> _stop() async {
     if (_stopping) return;
     setState(() => _stopping = true);
     final payload = DetoxPayload.fromAlarmSettings(widget.alarmSettings);
+    unawaited(_analytics.alarmStopped());
+    unawaited(
+      _analytics.detoxStarted(
+        source: 'alarm',
+        minutes: payload.detoxMinutes,
+      ),
+    );
     await _repository.consumeAfterRing(widget.alarmSettings.id);
     await _sessionService.start(
       alarmId: widget.alarmSettings.id,
