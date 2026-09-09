@@ -7,6 +7,7 @@ import '../models/detox_alarm.dart';
 import '../models/sound_option.dart';
 import '../services/alarm_repository.dart';
 import '../services/alarm_service.dart';
+import '../services/analytics_service.dart';
 import '../services/alarm_sound_service.dart';
 import '../utils/duration_format.dart';
 import '../utils/repeat_days.dart';
@@ -27,6 +28,7 @@ class EditAlarmScreen extends StatefulWidget {
 class _EditAlarmScreenState extends State<EditAlarmScreen> {
   static const _repository = AlarmRepository();
   static const _soundService = AlarmSoundService();
+  static const _analytics = AnalyticsService();
 
   /// Quick-pick durations offered below the manual field, in minutes.
   static const _detoxPresets = [30, 60, 90, 120];
@@ -62,6 +64,7 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
       _labelController = TextEditingController(text: existing.label ?? '');
     }
     _detoxController = TextEditingController(text: _detoxMinutes.toString());
+    unawaited(_analytics.screenView('edit_alarm'));
     unawaited(_loadCustomSounds());
   }
 
@@ -229,6 +232,14 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
       repeatDays: _repeatDays,
     );
     await _repository.save(alarm);
+    unawaited(
+      _creating
+          ? _analytics.alarmCreated(
+              detoxMinutes: _detoxMinutes,
+              repeating: _repeatDays.isNotEmpty,
+            )
+          : _analytics.alarmEdited(),
+    );
     if (!mounted) return;
     setState(() => _saving = false);
     Navigator.pop(context, true);
@@ -238,6 +249,7 @@ class _EditAlarmScreenState extends State<EditAlarmScreen> {
     final existing = widget.alarm;
     if (existing == null) return;
     await _repository.delete(existing.id);
+    unawaited(_analytics.alarmDeleted());
     if (mounted) Navigator.pop(context, true);
   }
 

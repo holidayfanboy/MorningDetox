@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../models/installed_app.dart';
 import '../services/allowed_apps_service.dart';
+import '../services/analytics_service.dart';
 import '../services/installed_apps_bridge.dart';
 import '../widgets/toggle_dot.dart';
 
@@ -20,6 +21,7 @@ class AllowedAppsScreen extends StatefulWidget {
 class _AllowedAppsScreenState extends State<AllowedAppsScreen> {
   static const _installedApps = InstalledAppsBridge();
   static const _allowedApps = AllowedAppsService();
+  static const _analytics = AnalyticsService();
 
   List<InstalledApp> _apps = [];
   Set<String> _allowed = {};
@@ -28,6 +30,7 @@ class _AllowedAppsScreenState extends State<AllowedAppsScreen> {
   @override
   void initState() {
     super.initState();
+    unawaited(_analytics.screenView('allowed_apps'));
     unawaited(_load());
   }
 
@@ -51,6 +54,13 @@ class _AllowedAppsScreenState extends State<AllowedAppsScreen> {
       }
     });
     await _allowedApps.save(_allowed);
+    // Count only -- never send raw package names to analytics.
+    unawaited(
+      _analytics.settingChanged(
+        setting: 'allowed_apps_count',
+        value: '${_allowed.length}',
+      ),
+    );
   }
 
   @override

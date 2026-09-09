@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
+import '../services/analytics_service.dart';
 import '../services/detox_session_service.dart';
 import '../widgets/countdown_text.dart';
 import '../widgets/ripple_background.dart';
@@ -16,23 +19,48 @@ import 'alarm_list_screen.dart';
 /// user back to this screen, on iOS there is no such mechanism and this is
 /// an honor-system timer. Either way, the only sanctioned way to end the
 /// session early is the Emergency Unlock button below.
-class DetoxLockScreen extends StatelessWidget {
+class DetoxLockScreen extends StatefulWidget {
   const DetoxLockScreen({super.key, required this.endAt});
 
   final DateTime endAt;
 
-  static const _sessionService = DetoxSessionService();
+  @override
+  State<DetoxLockScreen> createState() => _DetoxLockScreenState();
+}
 
-  Future<void> _finish(BuildContext context) async {
+class _DetoxLockScreenState extends State<DetoxLockScreen> {
+  static const _sessionService = DetoxSessionService();
+  static const _analytics = AnalyticsService();
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_analytics.screenView('detox_lock'));
+  }
+
+  Future<void> _finish({required String reason}) async {
+    final startedAt = await _sessionService.startedAt();
+    final now = DateTime.now();
+    unawaited(
+      _analytics.detoxEnded(
+        reason: reason,
+        plannedMinutes: startedAt == null
+            ? 0
+            : widget.endAt.difference(startedAt).inMinutes,
+        actualMinutes: startedAt == null
+            ? 0
+            : now.difference(startedAt).inMinutes,
+      ),
+    );
     await _sessionService.end();
-    if (!context.mounted) return;
+    if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const AlarmListScreen()),
       (route) => false,
     );
   }
 
-  Future<void> _confirmEmergencyUnlock(BuildContext context) async {
+  Future<void> _confirmEmergencyUnlock() async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -53,8 +81,8 @@ class DetoxLockScreen extends StatelessWidget {
         ],
       ),
     );
-    if (confirmed == true && context.mounted) {
-      await _finish(context);
+    if (confirmed == true && mounted) {
+      await _finish(reason: 'emergency_unlock');
     }
   }
 
@@ -98,14 +126,14 @@ class DetoxLockScreen extends StatelessWidget {
                       rippleAmplitude: 1.8,
                       tiltDegrees: 1.2,
                       child: CountdownText(
-                        target: endAt,
+                        target: widget.endAt,
                         style: Theme.of(context).textTheme.displayMedium,
-                        onReached: () => _finish(context),
+                        onReached: () => _finish(reason: 'completed'),
                       ),
                     ),
                     const SizedBox(height: 56),
                     GestureDetector(
-                      onTap: () => _confirmEmergencyUnlock(context),
+                      onTap: _confirmEmergencyUnlock,
                       child: WaterRippleText(
                         floatAmplitude: 3.0,
                         rippleAmplitude: 1.2,

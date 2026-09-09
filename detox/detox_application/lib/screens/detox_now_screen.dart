@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
+import '../services/analytics_service.dart';
 import '../services/detox_session_service.dart';
 import '../utils/duration_format.dart';
 import '../widgets/duration_dial.dart';
@@ -23,13 +26,21 @@ class _DetoxNowScreenState extends State<DetoxNowScreen> {
   static const _stepMinutes = 5;
   static const _minMinutes = 5;
   static const _sessionService = DetoxSessionService();
+  static const _analytics = AnalyticsService();
 
   int _minutes = 60;
   bool _starting = false;
 
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_analytics.screenView('detox_now'));
+  }
+
   Future<void> _lockNow() async {
     if (_starting) return;
     setState(() => _starting = true);
+    unawaited(_analytics.detoxStarted(source: 'detox_now', minutes: _minutes));
     // No backing alarm -- alarmId is stored but never read (the accessibility
     // service enforces the lock purely off detox_active + detox_end_at_millis).
     await _sessionService.start(alarmId: -1, minutes: _minutes);

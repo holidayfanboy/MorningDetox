@@ -1,4 +1,4 @@
-package com.example.detox_application
+package com.morningdetox.app
 
 import android.accessibilityservice.AccessibilityService
 import android.content.Context

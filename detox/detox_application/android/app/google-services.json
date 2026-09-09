@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "944727523786",
+    "project_id": "morning-detox-app",
+    "storage_bucket": "morning-detox-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:944727523786:android:d123fd5ff1b682c2684f33",
+        "android_client_info": {
+          "package_name": "com.morningdetox.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC0muju7nLHnxLd9ufkfAA_azgGiz2n-mw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

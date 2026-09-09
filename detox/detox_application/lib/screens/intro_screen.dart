@@ -1,4 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+
+import '../services/analytics_service.dart';
 
 /// Shown only once, on the very first launch. Tapping anywhere moves on.
 class IntroScreen extends StatelessWidget {
@@ -8,6 +12,7 @@ class IntroScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    unawaited(const AnalyticsService().screenView('intro'));
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
       body: GestureDetector(
