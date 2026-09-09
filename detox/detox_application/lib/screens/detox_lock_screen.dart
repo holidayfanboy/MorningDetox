@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../services/detox_session_service.dart';
 import '../widgets/countdown_text.dart';
+import '../widgets/ripple_background.dart';
 import '../widgets/sketchy_box.dart';
+import '../widgets/water_ripple_text.dart';
 import 'alarm_list_screen.dart';
 
 /// Full-screen "stay off your phone" timer, shown right after an alarm is
@@ -34,7 +36,7 @@ class DetoxLockScreen extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Emergency unlock?'),
+        title: const Text('UNLOCK'),
         content: const Text(
           "This ends your detox session early. You'll be able to use your "
           'phone right away.',
@@ -62,42 +64,71 @@ class DetoxLockScreen extends StatelessWidget {
     return PopScope(
       canPop: false,
       child: Scaffold(
-        body: SafeArea(
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'phone-free time',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: scheme.onSurface.withValues(alpha: 0.6),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                CountdownText(
-                  target: endAt,
-                  style: Theme.of(context).textTheme.displayMedium,
-                  onReached: () => _finish(context),
-                ),
-                const SizedBox(height: 56),
-                GestureDetector(
-                  onTap: () => _confirmEmergencyUnlock(context),
-                  child: SketchyBox(
-                    seed: 13,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 14,
-                    ),
-                    child: Text(
-                      'Emergency Unlock',
-                      style: Theme.of(context).textTheme.bodyMedium
-                          ?.copyWith(color: scheme.error),
-                    ),
-                  ),
-                ),
-              ],
+        body: Stack(
+          children: [
+            const Positioned.fill(
+              child: IgnorePointer(child: RippleBackground(seed: 13)),
             ),
-          ),
+            SafeArea(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    WaterRippleText(
+                      floatAmplitude: 2.5,
+                      rippleAmplitude: 1.0,
+                      tiltDegrees: 0.8,
+                      child: SizedBox(
+                        width: MediaQuery.sizeOf(context).width * 0.78,
+                        child: Text(
+                          '“Great things are not done by impulse, but by a '
+                          'series of small things brought together.”\n'
+                          '- Vincent Van Gogh',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                color: scheme.onSurface.withValues(alpha: 0.6),
+                              ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    WaterRippleText(
+                      floatAmplitude: 5.0,
+                      rippleAmplitude: 1.8,
+                      tiltDegrees: 1.2,
+                      child: CountdownText(
+                        target: endAt,
+                        style: Theme.of(context).textTheme.displayMedium,
+                        onReached: () => _finish(context),
+                      ),
+                    ),
+                    const SizedBox(height: 56),
+                    GestureDetector(
+                      onTap: () => _confirmEmergencyUnlock(context),
+                      child: WaterRippleText(
+                        floatAmplitude: 3.0,
+                        rippleAmplitude: 1.2,
+                        tiltDegrees: 0.9,
+                        child: SketchyBox(
+                          seed: 13,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 14,
+                          ),
+                          child: Text(
+                            'Emergency Unlock',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(color: scheme.error),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

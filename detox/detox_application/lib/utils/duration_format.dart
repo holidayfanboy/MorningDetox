@@ -7,6 +7,29 @@ String formatMinutesShort(int minutes) {
   return rest == 0 ? '${hours}h' : '${hours}h ${rest}m';
 }
 
+/// Parses a loosely-typed duration into whole minutes -- the inverse of
+/// [formatMinutesShort] for a field the user edits by hand. Accepts
+/// "90", "2h", "2h 30m", "2h30", "45m", "1 h 5 m". Returns null when the
+/// string carries no digits at all. The result is NOT clamped or snapped --
+/// the caller applies its own range and step.
+int? parseFlexibleDurationMinutes(String input) {
+  final text = input.trim().toLowerCase();
+  if (text.isEmpty) return null;
+
+  final hourMatch = RegExp(r'(\d+)\s*h').firstMatch(text);
+  final minuteMatch = RegExp(r'(\d+)\s*m').firstMatch(text);
+
+  if (hourMatch == null && minuteMatch == null) {
+    final digitsOnly = RegExp(r'^\d+$');
+    if (!digitsOnly.hasMatch(text)) return null;
+    return int.parse(text);
+  }
+
+  final hours = int.tryParse(hourMatch?.group(1) ?? '') ?? 0;
+  final minutes = int.tryParse(minuteMatch?.group(1) ?? '') ?? 0;
+  return hours * 60 + minutes;
+}
+
 /// Formats a [Duration] as "1h 24m 03s" / "24m 03s" / "3s", trimming leading
 /// zero units so a countdown reads naturally as it gets shorter.
 String formatCountdown(Duration d) {

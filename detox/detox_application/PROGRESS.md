@@ -3,6 +3,106 @@
 Running notes on what's been built, session by session, so context isn't
 lost between sessions. Newest first.
 
+## 2026-09-09 -- Detox Now screen (immediate phone lock)
+
+Built out the placeholder `lib/screens/detox_now_screen.dart` into a real
+screen: a hand-drawn circular drag dial for choosing a lock duration, then
+"Lock now" drops straight onto `DetoxLockScreen`.
+
+- New `lib/widgets/DurationDial` -- controlled circular dial. Full circle =
+  `maxMinutes` (360 = 6h); the filled arc grows clockwise from 12 o'clock.
+  Drag is *relative* (`onPanStart` seeds an accumulator from the current
+  value, deltas are unwrapped so winding past 12 o'clock never snaps
+  empty<->full, first touch never jumps). Snaps to `stepMinutes` (5),
+  clamps to 5..360. Painter (`_DialPainter`) reuses the app's wobbly-polygon
+  + double-stroke idiom: faint 44-gon track ring, bolder open arc for the
+  fill, a small filled blob knob at the arc's leading edge (always drawn so
+  there's a grab point at the minimum). One `AnimationController` (250ms,
+  discrete `_SwipeableAlarmRow` flavour): `_controller.value` = fraction,
+  set 1:1 while `_dragging`, `animateTo(easeOut)` on a typed edit so the arc
+  glides.
+- Centre of the dial: "Lock your phone for..." wrapped in `WaterRippleText`,
+  and below it a big `_EditableDuration` readout ("1h 30m"). Tapping the
+  readout swaps in a `TextField` (phone keyboard) -- same tap-to-edit idiom
+  as `_WheelColumn`. Parsed by new `parseFlexibleDurationMinutes()` in
+  `lib/utils/duration_format.dart` ("2h 30m" / "150" / "45m" / "2h").
+- Square "Lock now" button = `SketchyBox(borderRadius: 3)` wrapped in
+  `WaterRippleText`, in a `GestureDetector` -- exactly the Emergency Unlock
+  button pattern from `detox_lock_screen.dart`.
+- Back arrow top-left (bare `IconButton`, no AppBar -- matches the
+  chrome-less canvas feel of `DetoxLockScreen` / `AlarmListScreen`).
+- "Lock now" mirrors `RingScreen._stop()` minus the alarm bookkeeping:
+  `DetoxSessionService().start(alarmId: -1, minutes: _minutes)` then
+  `Navigator.pushReplacement` to `DetoxLockScreen`. `alarmId: -1` is inert
+  -- `detox_alarm_id` is written but never read by Dart or the native
+  service. No changes to `app.dart` / `alarm_repository.dart` / Kotlin;
+  resume + cold-start pick the session up from `activeEndAt()` already.
+
+## 2026-09-08 -- Hand-drawn ripple background on the lock screen
+
+New `lib/widgets/RippleBackground` -- an ambient, hand-drawn "the screen is
+a pool" effect behind the `DetoxLockScreen` timer. Droplets land at random
+points every ~0.8-2.6s; 2-3 concentric wobbly rings spread outward
+(`easeOut`), swell in over the first 15% of life then fade out over the
+rest. Rings are stroked twice with different per-vertex jitter (same
+double-stroke trick as `SketchyBox`), coloured from
+`colorScheme.onSurface` at <=0.16 alpha, so it's faint dark rings on white
+/ faint grey rings on black. A tiny impact dab shows for the first instant
+of each drop. No packages -- one `AnimationController(..repeat())` as a
+frame driver + a `Stopwatch` clock + `CustomPainter`.
+
+- `detox_lock_screen.dart` -- body is now a `Stack`: `Positioned.fill`
+  `IgnorePointer(RippleBackground(seed: 13))` under the existing
+  `SafeArea > Center > Column`. The Emergency Unlock button still receives
+  taps (ripples are pointer-transparent).
+- Three ripples start mid-spread (negative birth times) so the pool is
+  never a dead flat wait for the first drop. Active ripples capped at 8.
+
+New `lib/widgets/WaterRippleText` -- wraps the "phone-free time" label, the
+`CountdownText`, and the Emergency Unlock `SketchyBox` so they read as
+reflections floating on that pool: the
+whole block slowly bobs, drifts sideways and tips ~1 degree (summed slow
+sines on long periods), with a faint per-band horizontal ripple running
+through the letters. Implementation: real child painted at opacity 0.01
+inside a `RepaintBoundary`, snapshotted to a `ui.Image` via `toImageSync`
+~10x/s (keeps the countdown digits current), redrawn every frame in 2px
+bands with the float transform + ripple applied. Child still lays out
+normally and its 1s timer keeps running. No shaders/packages.
+
+- The distorted overlay is a painter-only `CustomPaint` (no child), so it
+  doesn't absorb hits -- the Emergency Unlock `GestureDetector` still fires
+  on taps over the box's laid-out bounds even while the visible box floats
+  a few px off. Its float is toned down (amp 3.0) since it's a tap target.
+- The Van Gogh quote above the countdown is now constrained to 78% of the
+  screen width, `TextAlign.center`, with the attribution forced onto its
+  own line -- was one full-bleed line running off both edges.
+
+### Earlier this day -- Rain effect (added, then reverted)
+
+Briefly added `flutter_rain_effect` as a background layer on
+`DetoxLockScreen`, then removed it -- the effect wasn't what was wanted.
+No `flutter_rain_effect` dependency remains.
+
+## 2026-09-08 -- ToggleDot "ink drop" animation
+
+`lib/widgets/toggle_dot.dart` -- turning a dot *on* now animates: a droplet
+falls onto the geometric top of the wobbly circle (~120ms), then the fill
+spreads radially from that contact point, clipped to the path, until full
+(~330ms; 450ms total). Turning *off* is unchanged -- instant.
+
+- `ToggleDot` is now a `StatefulWidget` with `SingleTickerProviderStateMixin`
+  and one `AnimationController` (0 = outline, 1 = filled), matching the
+  `_SwipeableAlarmRowState` idiom. `didUpdateWidget` animates only on
+  false->true; true->false does `_controller.value = 0` (instant snap, stops
+  any in-flight fill); an unchanged `value` is ignored, so `ListView` scroll
+  rebuilds / data reloads can't restart a running fill. Constructor and all
+  call sites are unchanged.
+- `_DotPainter`: `bool filled` -> `double progress`. `_wobblyCircle` geometry
+  untouched (built first so the seeded jitter order is preserved). Two small
+  flourishes gated behind `_DotPainter._ripple`: a shrinking vertically-
+  squashed "splat" blob for the first quarter of the spread, and one faint
+  ring (alpha 0.22 -> 0) riding the fill front.
+
 ## 2026-09-08 -- Settings screen
 
 Built out the previously-empty `lib/screens/settings_screen.dart`.
