@@ -82,5 +82,4 @@ We will update this page and change the "Last updated" date above.
 Significant changes will also be called out in the app's release notes.
 
 ## Contact
-
-<!-- TODO: fill in a contact email address -->
+rrdmane@gmail.com
