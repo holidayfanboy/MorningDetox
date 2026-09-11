@@ -30,7 +30,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   /// once `docs/privacy-policy.html` is published (e.g. GitHub Pages from
   /// the `/docs` folder) -- and mirror it into Play Console.
   static const _privacyPolicyUrl =
-      'https://holidayfanboy.github.io/morning-detox/privacy-policy.html';
+      'https://holidayfanboy.github.io/MorningDetox/privacy-policy.html';
 
   /// Plays the ringtone preview for the volume test. Its own player, kept
   /// well away from `package:alarm`'s playback.
